@@ -85,7 +85,7 @@ export class UserSchema {
   is_registered: boolean;
   @Prop({
     type: Boolean,
-    default: false,
+    default: true,
   })
   enabled: boolean;
 }

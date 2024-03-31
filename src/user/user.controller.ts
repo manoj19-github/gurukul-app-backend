@@ -35,9 +35,9 @@ export class UserController {
   }
   @Post('/forgotpassword')
   async forgotPassword(
-    @Body() { email, userRole }: { email: string; userRole: ERole },
+    @Body() { role_id, email_id }: { email_id: string; role_id: ERole },
   ) {
-    return await this.userService.forgotPasswordService(email, userRole);
+    return await this.userService.forgotPasswordService(email_id, role_id);
   }
   @Post('/resetpassword')
   async resetPassword(@Body(new ValidationPipe()) body: ResetPasswordDTO) {

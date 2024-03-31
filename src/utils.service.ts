@@ -8,6 +8,7 @@ import { createTransport, SendMailOptions } from 'nodemailer';
 import * as moment from 'moment';
 import { Response } from 'express';
 import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ERole, RoleMasterSchema } from './master/schema/roleMaster.schema';
 
@@ -95,6 +96,10 @@ export class UtilsMain {
         return resolve(true);
       });
     });
+  }
+  async hashPassword(rawPassword: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(rawPassword, salt);
   }
   async generateAuthToken({
     email,

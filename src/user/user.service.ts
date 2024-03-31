@@ -43,8 +43,7 @@ export class UserService {
     //  email duplication check
     if (!!isEmailExists) return isEmailExists;
     // const newRegistrationUser = await new UserModel({ name, email, password, avatar, userRole, isRegistered: true }).save(opts);
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(body.password, salt);
+    const hashedPassword = await this.utilsService.hashPassword(body.password);
     const newRegistrationUser = await this.UserModel.create({
       user_name: body.user_name,
       role_id: body.role_id,
@@ -124,15 +123,19 @@ export class UserService {
     email: string,
     userRole: string,
   ): Promise<boolean> {
+    console.log('email : ', email);
+    console.log('role : ', userRole);
     const isUserExists = await this.UserModel.findOne({
       email_id: email,
       role_id: userRole,
     });
+    console.log('isUserExists: ', isUserExists);
     if (!isUserExists)
       throw new HttpException('user not  exists', HttpStatus.BAD_REQUEST);
-    const expiresIn: any = process.env.JWT_ACCESS_TOKEN_EXPIRES;
+    const expiresIn: number = Number(process.env.TOKEN_TIMEOUT);
+    console.log('expiresIn: ', expiresIn);
     const expiration = new Date();
-    expiration.setTime(expiration.getTime() + expiresIn * 1000);
+    expiration.setTime(expiration.getTime() + expiresIn * 24);
     const token = randomBytes(3).toString('hex');
     const mailOptions: SendMailOptions = {
       from: process.env.EMAIL_USERNAME!,
@@ -152,9 +155,10 @@ export class UserService {
       return this.utilsService
         .sendMailMethod(mailOptions)
         .then((res) => {
+          console.log('message sent', { token, expiration });
           this.UserModel.updateOne(
             { _id: isUserExists._id },
-            { $set: { resetPasswordVerification: { token, expiration } } },
+            { $set: { reset_password_verification: { token, expiration } } },
           )
             .then(() => resolve(true))
             .catch(() => reject(false));
@@ -180,20 +184,30 @@ export class UserService {
       email_id: email_id,
       role_id: role_id,
     });
+    console.log('userDetails :555 ', userDetails);
+
     if (
       !!userDetails &&
       userDetails?.reset_password_verification &&
       userDetails.enabled !== false
     ) {
+      console.log('hit tokenee');
       if (
         new Date().getTime() >
         new Date(userDetails.reset_password_verification.expiration).getTime()
       )
         throw new HttpException('token expired', HttpStatus.BAD_REQUEST);
+      console.log('code : ', code);
       if (userDetails.reset_password_verification.token === code) {
+        const hPassword = await this.utilsService.hashPassword(password)
         await this.UserModel.updateOne(
           { _id: userDetails._id },
-          { $set: { password, resetPasswordVerification: undefined } },
+          {
+            $set: {
+              password: hPassword,
+              reset_password_verification: undefined,
+            },
+          },
         );
         return true;
       } else throw new HttpException('invalid token', HttpStatus.BAD_REQUEST);
@@ -240,7 +254,7 @@ export class UserService {
         .then((res) => {
           this.UserModel.updateOne(
             { _id: isUserExists._id },
-            { $set: { resetEmailVerification: { token, expiration } } },
+            { $set: { reset_email_verification: { token, expiration } } },
           )
             .then(() => resolve(true))
             .catch(() => reject(false));
@@ -278,7 +292,7 @@ export class UserService {
       if (userDetails.reset_email_verification.token === code) {
         await this.UserModel.updateOne(
           { _id: userDetails._id },
-          { $set: { email: newEmail, resetEmailVerification: undefined } },
+          { $set: { email: newEmail, reset_email_verification: undefined } },
         );
         return true;
       } else throw new HttpException('invalid token', HttpStatus.BAD_REQUEST);
@@ -326,7 +340,7 @@ export class UserService {
         .then((res) => {
           this.UserModel.updateOne(
             { _id: isUserExists._id },
-            { $set: { emailVerication: { token, expiration } } },
+            { $set: { email_verification: { token, expiration } } },
           )
             .then(() => resolve(true))
             .catch(() => reject(false));
@@ -562,7 +576,7 @@ export class UserService {
   async verifyEmailForLinkAccount(email: string) {
     return await this.UserModel.updateOne(
       { email_id: email },
-      { $set: { isEmailVerified: true } },
+      { $set: { is_email_verified: true } },
     );
   }
 }
