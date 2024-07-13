@@ -105,7 +105,7 @@ export class UserService {
         _id: isUserExists._id,
       });
 
-      let userDetails: any = JSON.parse(JSON.stringify(isUserExists));
+      const userDetails: any = JSON.parse(JSON.stringify(isUserExists));
       delete userDetails.password;
 
       return { token: userToken, user: userDetails };
