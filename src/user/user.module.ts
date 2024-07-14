@@ -4,6 +4,7 @@ import { UserSchema, UserCollection } from './schema/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UtilsMain } from 'src/utils.service';
+import { MasterModule } from 'src/master/master.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UtilsMain } from 'src/utils.service';
         schema: UserCollection,
       },
     ]),
+    MasterModule,
   ],
   controllers: [UserController],
   providers: [UserService, UtilsMain],

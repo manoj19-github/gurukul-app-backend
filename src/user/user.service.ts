@@ -1,3 +1,4 @@
+import { MasterService } from './../master/master.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -6,7 +7,7 @@ import { UtilsMain } from '../utils.service';
 
 import { Response } from 'express';
 
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { UserSchema, UserSchemaDocument } from './schema/user.schema';
 import { ERole } from 'src/master/schema/roleMaster.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -21,6 +22,8 @@ import {
 @Injectable()
 export class UserService {
   constructor(
+    @Inject(MasterService)
+    private readonly MasterService: MasterService,
     private jwtService: JwtService,
     private utilsService: UtilsMain,
     @InjectModel(UserSchema.name) private UserModel: Model<UserSchemaDocument>,
@@ -106,6 +109,13 @@ export class UserService {
       });
 
       const userDetails: any = JSON.parse(JSON.stringify(isUserExists));
+      const allRoles =
+        (await this.MasterService.getAllUserRole()) as Array<any>;
+      console.log('allRoles: ', allRoles);
+      console.log(userDetails.role_id);
+      userDetails.curr_role = allRoles.find(
+        (self) => String(self._id) === String(userDetails.role_id),
+      );
       delete userDetails.password;
 
       return { token: userToken, user: userDetails };
@@ -199,7 +209,7 @@ export class UserService {
         throw new HttpException('token expired', HttpStatus.BAD_REQUEST);
       console.log('code : ', code);
       if (userDetails.reset_password_verification.token === code) {
-        const hPassword = await this.utilsService.hashPassword(password)
+        const hPassword = await this.utilsService.hashPassword(password);
         await this.UserModel.updateOne(
           { _id: userDetails._id },
           {
