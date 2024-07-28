@@ -2,12 +2,18 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Post,
   Req,
   Res,
   ValidationPipe,
 } from '@nestjs/common';
-import { LoginDTO, ResetPasswordDTO, SignupDTO } from './dtos/authDetails.dto';
+import {
+  LoginDTO,
+  LoginDTOForGoogle,
+  ResetPasswordDTO,
+  SignupDTO,
+} from './dtos/authDetails.dto';
 import { UserService } from './user.service';
 import { Response, Request } from 'express';
 import { ERole } from 'src/master/schema/roleMaster.schema';
@@ -32,6 +38,17 @@ export class UserController {
     console.log('res: ', res);
 
     return response.status(200).json(res);
+  }
+  @Post('/login-google')
+  async loginByGoogle(
+    @Body(new ValidationPipe()) body: LoginDTOForGoogle,
+    @Res() response: Response,
+  ) {
+    const serviceResponse = await this.userService.loginServiceForGoogle(
+      body,
+      response,
+    );
+    return response.status(HttpStatus.OK).json(serviceResponse);
   }
   @Post('/forgotpassword')
   async forgotPassword(

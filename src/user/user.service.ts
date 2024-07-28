@@ -9,10 +9,9 @@ import { Response } from 'express';
 
 import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { UserSchema, UserSchemaDocument } from './schema/user.schema';
-import { ERole } from 'src/master/schema/roleMaster.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { LoginDTO, SignupDTO } from './dtos/authDetails.dto';
+import { LoginDTO, LoginDTOForGoogle, SignupDTO } from './dtos/authDetails.dto';
 import {
   UpdateAuthToken,
   ITokenOptions,
@@ -176,6 +175,38 @@ export class UserService {
         .catch(() => reject(false));
     });
   }
+  /***
+   * Login service for google login
+   * @param {string} email
+   * @param {string} soToken
+   * @param {string} userRole
+   * @memberof UserService
+   **/
+  async loginServiceForGoogle(body: LoginDTOForGoogle, res: Response) {
+    const isUserExists = await this.UserModel.findOne({
+      email_id: body.email_id,
+    });
+    if (!isUserExists)
+      throw new HttpException(
+        'We will implement this later',
+        HttpStatus.NOT_FOUND,
+      );
+
+    const userToken = await this.utilsService.JWTSignup({
+      res,
+      email: isUserExists.email_id,
+      role: isUserExists.role_id,
+      _id: isUserExists._id,
+    });
+    const userDetails: any = JSON.parse(JSON.stringify(isUserExists));
+    const allRoles = (await this.MasterService.getAllUserRole()) as Array<any>;
+    userDetails.curr_role = allRoles.find(
+      (self) => String(self._id) === String(userDetails.role_id),
+    );
+    delete userDetails.password;
+    return { token: userToken, user: userDetails };
+  }
+
   /***
    * reset password service
    * @param {string} email

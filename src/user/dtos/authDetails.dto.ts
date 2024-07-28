@@ -34,6 +34,17 @@ export class LoginDTO {
   @IsValidProperty(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   email_id: string;
 }
+export class LoginDTOForGoogle {
+  @IsString()
+  @IsNotEmpty()
+  soToken: string;
+  @IsString()
+  @IsNotEmpty()
+  @IsDefined()
+  @IsValidProperty(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+  email_id: string;
+}
+
 
 export class ResetPasswordDTO {
   @IsString()
